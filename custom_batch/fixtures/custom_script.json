@@ -1,0 +1,74 @@
+[
+ {
+  "docstatus": 0, 
+  "doctype": "Custom Script", 
+  "dt": "Sales Invoice", 
+  "modified": "2017-07-17 15:47:20.876100", 
+  "name": "Sales Invoice-Client", 
+  "script": "frappe.ui.form.on(\"Sales Invoice\", \"validate\", function(frm, cdt, cdn) {\n    var d = locals[cdt][cdn];\n    //msgprint(frm.docstatus);\n\n    if(frm.doc.docstatus < 1){\t\t\n\t\n\tif (frm.doc.is_return)frm.set_value(\"naming_series\", \"R/GAL/.YY./.MM./.###\");\n\telse frm.set_value(\"naming_series\", \"GAL/.YY./.MM./.###\");\n\t}\n\t\n  //msgprint(item_code);\n});\n\nfrappe.ui.form.on(\"Sales Invoice\", \"is_pos\", function(frm, cdt, cdn) {\n    if (!frm.doc.is_pos){\n         frm.set_df_property(\"due_date\", \"hidden\", false);\n    }\n});\nfrappe.ui.form.on(\"Sales Invoice\", \"is_return\", function(frm, cdt, cdn) {\n \tif (frm.doc.is_return)frm.set_value(\"naming_series\", \"R/GAL/.YY./.MM./.###\");\n\telse frm.set_value(\"naming_series\", \"GAL/.YY./.MM./.###\");\n\t\n   //refresh_fields(\"naming_series\");\n    \n});\n\n\nfrappe.ui.form.on(\"Sales Invoice Item\", \"item_code\", function(frm, cdt, cdn){\nvar d = locals[cdt][cdn];\n\nfrappe.after_ajax(function() { \n\tfrappe.call({\n        \tmethod: \"custom1.custom1.doctype.testdoctype.testdoctype.mks_get_ordered_qty\",\n        \targs: {\n       \t\t\t\"item_code\": d.item_code\n        \t\t\n        \t},\n        \tcallback: function (r) {\n\t\t\t//var cust_group = frm.doc.customer_group;\n\t\t\tif (!r.exc && r.message){\n\t\t\t\tconsole.log(\"hey2...\" + r.message);\n\t\t\t\t//frappe.model.set_value(cdt, cdn, \"rate\", r.message.tk1);\n\t\t\t\tmsgprint(d.item_code + \" is on order: \" + r.message + \" \" + d.uom);\n \t\t\t}\n  \t    \t}\n\t});\n\trefresh_field(d);\n});\n//frm.refresh();\n});\n\n\n/*\nfrappe.ui.form.on(\"Sales Invoice\", \"validate\", function(frm, cdt, cdn) {\nvar d = locals[cdt][cdn];\nvar it = \"\";\n\nif(frm.doc.docstatus < 1){\n    \t$.each(frm.doc.items, function (i, v){\n\t\tfrappe.call({\n\t\t\tmethod: \"erpnext.stock.utils.get_incoming_rate\", \n\t\t\targs: {\n\t\t\t\targs: {\n\t\t\t\t\t\"item_code\": v.item_code, \n\t\t\t\t\t\"warehouse\": v.warehouse,\n\t\t\t\t\t\"posting_date\": frm.doc.posting_date,\n\t\t\t\t\t\"posting_time\": frm.doc.posting_time\n\t\t\t\t}\n\t\t\t},\n\t\t\tcallback: function(r) {\n\t\t\t\tconsole.log('incoming rate====' + r.message);\n\t\t\t\tconsole.log('v rate====' + v.rate);\n\t\t\t\tif (r.message && (r.message > v.rate))it+=v.item_code;\n\t\t\t\t//console.log('incoming rate====' + r.message);\n\t\t\t\t//console.log('it====' + it);\n\t\t\t\t//frappe.model.set_value(cdt, cdn, \"rate\", r.message);\n\t\t\t}\n\t\t});\n\t});\n\t//refresh_field(d);\n}\nconsole.log('it====' + it);\n\tif (it != \"\"){\n\t\t\tmsgprint(__(\"Item rate is below its Cost of Goods Sold:\"+it));\n\t\t\tvalidated=false;\n\t\t\treturn;\n\t}\n});\n*/\n", 
+  "script_type": "Client"
+ }, 
+ {
+  "docstatus": 0, 
+  "doctype": "Custom Script", 
+  "dt": "Stock Entry", 
+  "modified": "2017-07-21 19:09:33.572717", 
+  "name": "Stock Entry-Client", 
+  "script": "frappe.ui.form.on(\"Stock Entry\", \"validate\", function(frm, cdt, cdn) {\n    var d = locals[cdt][cdn];\n    \n   $.each(frm.doc.items, function (i, r){\n  \t  if (frm.doc.purpose != \"Repack\"){\n        \tr.expense_account = \"Capital Stock - gal\";\n\t\t//frappe.model.set_value(cdt, cdn, \"expense_account\",\"Capital Stock - pls\");\n    \t  }\n    \t  \n   });\n  // frm.refresh();\n  // msgprint(d.expense_account);\n});\nfrappe.ui.form.on(\"Stock Entry Detail\", \"qty\", function(frm, cdt, cdn) {\n    var d = locals[cdt][cdn];\n    \n    if (frm.doc.purpose == \"Repack\"){\n        d[\"expense_account\"] = \"Capital Stock - gal\";\n\t//frappe.model.set_value(cdt, cdn, \"expense_account\",\"Capital Stock - pls\");\n    }\n    \n   // msgprint(d.expense_account);\n});\n\n/*\nfrappe.ui.form.on(\"Stock Entry Detail\", \"item_code\", function(frm, cdt, cdn) {\n    var d = locals[cdt][cdn];\n    var disc = 0;\n    \n    if (frm.doc.purpose == \"Repack\"){\n\t//frappe.model.set_value(d.doctype, d.name, \"expense_account\", \"Capital Stock - tk\");\n\t//frappe.model.set_value(cdt, cdn, \"expense_account\",\"Capital Stock - tk\");\n\td.expense_account = \"Capital Stock - phl\";\n \t\n\t\n    }\n\t//refresh_field(\"items\");\n    \t//frm.refresh();\n  //msgprint(d.expense_account);\n //d.expense_account = \"Capital Stock - phl\";\n});\n*/", 
+  "script_type": "Client"
+ }, 
+ {
+  "docstatus": 0, 
+  "doctype": "Custom Script", 
+  "dt": "Purchase Invoice", 
+  "modified": "2017-07-21 19:38:46.515929", 
+  "name": "Purchase Invoice-Client", 
+  "script": "/*\nfrappe.ui.form.on(\"Purchase Invoice\", \"validate\", function(frm, cdt, cdn) {\n    var d = locals[cdt][cdn];\n    //msgprint(frm.docstatus);\n\n    if(frm.doc.docstatus < 1){\t\t\n\t\n\tif (frm.doc.is_return)frm.set_value(\"naming_series\", \"R/PI/.YY./.MM./.###\");\n\telse frm.set_value(\"naming_series\", \"PI/.YY./.MM./.###\");\n\t\n    }\n  //msgprint(item_code);\n});\n\nfrappe.ui.form.on(\"Purchase Invoice\", \"is_paid\", function(frm, cdt, cdn) {\n    if (!frm.doc.is_paid){\n         frm.set_df_property(\"due_date\", \"hidden\", false);\n    }\n});\nfrappe.ui.form.on(\"Purchase Invoice\", \"is_return\", function(frm, cdt, cdn) {\n \tif (frm.doc.is_return)frm.set_value(\"naming_series\", \"R/PI/.YY./.MM./.###\");\n\telse frm.set_value(\"naming_series\", \"PI/.YY./.MM./.###\");\n\t\n   //refresh_fields(\"naming_series\");\n    \n});\n*/\n\n/*\nfrappe.ui.form.on(\"Purchase Invoice\", \"refresh\", function(frm, cdt, cdn) {\n    var d = locals[cdt][cdn];\n    if(frm.doc.docstatus < 1){\n    \t$.each(frm.doc.items, function (i, r) \n\t\t{\n\t\t\tconsole.log(r.warehouse);\n\t\t\tif (r.warehouse == \"Pasar 8 Alam Sutera - mm\"){\n        \t\t\t r.cost_center = \"Pasar 8 Alam Sutera- amd\";\n    \t\t\t}\n    \t\t\telse {\n\t\t\t         r.cost_center = \"General - mm\";\n    \t\t\t}\n\t\t\t//frappe.model.set_value(cdt, cdn, \"cost_center\", frm.doc.cost_center);\n\t\t\t//r.cost_center = frm.doc.cost_center;\n\t\t\tconsole.log(r.cost_center);\n\t\t})\n\t\t//refresh_field(\"items\");\n\t}\n});\n*/", 
+  "script_type": "Client"
+ }, 
+ {
+  "docstatus": 0, 
+  "doctype": "Custom Script", 
+  "dt": "Stock Reconciliation", 
+  "modified": "2017-06-15 22:05:33.670181", 
+  "name": "Stock Reconciliation-Client", 
+  "script": "frappe.ui.form.on(\"Stock Reconciliation\", \"validate\", function(frm, cdt, cdn) {\n    var d = locals[cdt][cdn];\n    //msgprint(frm.docstatus);\n    if(frm.doc.docstatus < 1){\n\t\n\t\tfrm.set_value(\"expense_account\", \"Capital Stock - ss\");\n\t}\n\n});", 
+  "script_type": "Client"
+ }, 
+ {
+  "docstatus": 0, 
+  "doctype": "Custom Script", 
+  "dt": "Item", 
+  "modified": "2017-07-10 21:58:50.723106", 
+  "name": "Item-Client", 
+  "script": "/*\nfrappe.ui.form.on(\"Item\", \"validate\", function(frm, cdt, cdn) {\n\tif(!frm.doc._islocal){\n\t\tconsole.log('hey');\n\t\tif (frm.doc.item_code != \"\"){\n\t\t\tfrm.set_value(\"item_code\", frm.doc.item_code+=\":\"+frm.doc.stock_uom);\n\t\t}\n\t\t\n\t}\n\t\n});\n*/\n\n/*\nfrappe.ui.form.on(\"Item\", \"refresh\", function(frm, cdt, cdn) {\n\t//if(frm.doc._islocal){\n\t\tconsole.log('hey');\n\t\tif (frm.doc.item_name != frm.doc.item_code){\n\t\t\tfrm.set_value(\"item_name\", frm.doc.item_code);\n\t\t\tfrm.set_value(\"description\", frm.doc.item_code);\n\t\t\tfrm.save();\n\t\t}\n\t\t\n\t//}\n\t\n});\n*/", 
+  "script_type": "Client"
+ }, 
+ {
+  "docstatus": 0, 
+  "doctype": "Custom Script", 
+  "dt": "Delivery Note", 
+  "modified": "2017-05-16 19:46:38.331018", 
+  "name": "Delivery Note-Client", 
+  "script": "frappe.ui.form.on(\"Delivery Note\", \"validate\", function(frm, cdt, cdn) {\n\tif(frm.doc.docstatus < 1){\n\t\tvar d = new Date();\n\t\tvar t = d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds(); \n\n\t\tif (!frm.doc._islocal)frm.set_value(\"posting_time\", t.toString());\n\n\t\tif (frm.doc.is_return) frm.set_value(\"naming_series\", \"R/DLN/.YY./.MM./.###\");\n\t}\n\t\n});\n\nfrappe.ui.form.on(\"Delivery Note\", \"is_return\", function(frm, cdt, cdn) {\n \tif (frm.doc.is_return){\n\t\tfrm.set_value(\"naming_series\", \"R/STS/.YY./.MM./.###\");\t\t\n\t}\n\n   //refresh_fields(\"naming_series\");\n    \n});", 
+  "script_type": "Client"
+ }, 
+ {
+  "docstatus": 0, 
+  "doctype": "Custom Script", 
+  "dt": "Sales Order", 
+  "modified": "2017-06-14 20:41:07.036531", 
+  "name": "Sales Order-Client", 
+  "script": "/*\nfrappe.ui.form.on(\"Sales Order Item\", \"item_code\", function(frm, cdt, cdn){\n\tvar d = locals[cdt][cdn];\n\tfrm.trigger(\"qty\");\n});\n*/\n/*\nfrappe.ui.form.on(\"Sales Order Item\", \"item_code\", function(frm, cdt, cdn){\nvar d = locals[cdt][cdn];\n\nfrappe.after_ajax(function() { \n\tfrappe.call({\n        \tmethod: \"frappe.client.get\",\n        \targs: {\n        \t\tdoctype: \"Item Price\",\n        \t\tfilters: {\n        \t\t\t\"price_list\": frm.doc.price_list,\n        \t\t\t\"item_code\": d.item_code\n        \t\t}\n        \t},\n        \tcallback: function (r) {\n\t\t\t//var cust_group = frm.doc.customer_group;\n\t\t\tconsole.log(\"hey2...\" + data.message.tk1);\n\t\t\t\t//d.rate = data.message.tk1;\n\t\t\t\tfrappe.model.set_value(cdt, cdn, \"rate\", r.message.tk1);\n  \t    \t}\n\t});\n\trefresh_field(d);\n});\n//frm.refresh();\n});\n*/", 
+  "script_type": "Client"
+ }, 
+ {
+  "docstatus": 0, 
+  "doctype": "Custom Script", 
+  "dt": "Batch", 
+  "modified": "2017-07-23 08:36:57.860307", 
+  "name": "Batch-Client", 
+  "script": "frappe.ui.form.on(\"Batch\", \"validate\", function(frm) {\n    //var d = locals[cdt][cdn];\n    //msgprint(frm.docstatus);\n\tdoc = frm.doc;\n\n    if(!frm.doc.__isLocal){\t\t\n\tdays_to_expiry = frappe.datetime.get_day_diff(doc.expiry_date, frappe.datetime.nowdate())\n\tconsole.log('days diff === ' + days_to_expiry);\n\t\tdoc.days_to_expiry = days_to_expiry\n\n\t\tif (parseInt(days_to_expiry) <= parseInt(doc.expiry_start_day) && parseInt(days_to_expiry) > 30) doc.expiry_status = \"Expired Soon\"\n\t\telse if (parseInt(days_to_expiry) <= 30 && parseInt(days_to_expiry) > 0)\n\t\t\tdoc.expiry_status = \"Expired Very Soon\"\n\t\telse if (parseInt(days_to_expiry) <= 0)\n\t\t\tdoc.expiry_status = \"Expired\"\n\t\telse\tdoc.expiry_status = \"Open\"\n    }\t\n  //msgprint(item_code);\n});\n", 
+  "script_type": "Client"
+ }
+]
