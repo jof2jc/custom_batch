@@ -17,6 +17,9 @@ app_license = "MIT"
 # include js, css files in header of desk.html
 # app_include_css = "/assets/custom_batch/css/custom_batch.css"
 # app_include_js = "/assets/custom_batch/js/custom_batch.js"
+app_include_js = [
+	"assets/js/custom_batch1.min.js"
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/custom_batch/css/custom_batch.css"
@@ -100,6 +103,10 @@ doc_events = {
     },
     "Purchase Invoice": {
         "on_submit": "custom_batch.custom_batch.custom_batch.set_batch_expired_date_from_purchase"
+    },
+    "Item": {
+        "validate": "custom_batch.custom_batch.custom_batch.set_item_name",
+	"before_insert": "custom_batch.custom_batch.custom_batch.set_item_name"
     }
 }
 
@@ -126,7 +133,7 @@ doc_events = {
 # }
 
 scheduler_events = {
-	"all": [
+	"daily": [
 		"custom_batch.custom_batch.custom_batch.update_batch_expired_date_daily"
 	]
 }

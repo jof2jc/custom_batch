@@ -1,0 +1,6 @@
+{
+	"js/custom_batch1.min.js": [
+ 	       			"public/js/link_formatter.js"
+    	]
+
+}

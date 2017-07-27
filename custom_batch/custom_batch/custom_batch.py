@@ -4,6 +4,18 @@ from frappe import _
 
 from frappe.utils import nowdate, now_datetime
 
+def set_item_name(self, method):
+	self.item_name = self.item_code
+
+@frappe.whitelist()
+def get_batch_no_fifo(item_code=None, warehouse=None):
+	data={}
+	return frappe.db.sql('''SELECT ste.batch_no, sum(ste.actual_qty) as qty FROM `tabStock Ledger Entry` ste Inner Join `tabBatch` b 
+			ON ste.item_code=b.item AND ste.batch_no=b.name WHERE b.days_to_expiry > 0 and b.expiry_status Not IN('Expired') 
+			AND ste.item_code=%s and ste.warehouse=%s GROUP BY ste.batch_no HAVING sum(ste.actual_qty) > 0 
+			ORDER BY ste.posting_date ASC,ste.posting_time ASC limit 1''', (item_code, warehouse), as_dict=0)
+				
+
 def set_batch_expired_date_from_purchase(self, method):
 	#batch_doc = frappe.get_doc("Batch", batch_id)
 	#pi_doc = frappe.get_doc("Purchase Invoice", pi_name)
@@ -12,10 +24,14 @@ def set_batch_expired_date_from_purchase(self, method):
 		has_batch_no = frappe.db.get_value('Item', d.item_code, 'has_batch_no')
 		if has_batch_no and d.batch_no:
 			batch_doc = frappe.get_doc("Batch", d.batch_no)
-			batch_doc.expiry_date = d.expired_date
-			batch_doc.expiry_start_day = d.expiry_start_day
 
-			days_to_expiry = frappe.utils.date_diff(d.expired_date, nowdate())
+			#batch_doc.expiry_date = d.expired_date
+
+			#batch_doc.expiry_start_day = d.expiry_start_day
+			batch_doc.reference_doctype = self.doctype
+			batch_doc.reference_name = self.name
+
+			days_to_expiry = frappe.utils.date_diff(batch_doc.expiry_date, nowdate())
 			batch_doc.days_to_expiry = days_to_expiry
 
 			if int(days_to_expiry) <= int(d.expiry_start_day) and int(days_to_expiry) > 30:
