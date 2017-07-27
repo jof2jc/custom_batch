@@ -36,7 +36,7 @@ doctype_list_js = {
   "Batch": "public/js/batch_list.js"
 }
 
-fixtures = ["Custom Field", "Custom Script", "Property Setter"]
+fixtures = ["Custom Field", "Custom Script"]
 
 
 # Home Pages
