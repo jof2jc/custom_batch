@@ -11,7 +11,7 @@ def set_item_name(self, method):
 def get_batch_no_fifo(item_code=None, warehouse=None):
 	data={}
 	return frappe.db.sql('''SELECT ste.batch_no, sum(ste.actual_qty) as qty FROM `tabStock Ledger Entry` ste Inner Join `tabBatch` b 
-			ON ste.item_code=b.item AND ste.batch_no=b.name WHERE b.days_to_expiry > 0 and b.expiry_status Not IN('Expired') 
+			ON ste.item_code=b.item AND ste.batch_no=b.name WHERE b.days_to_expiry > 0 and b.expiry_status Not IN ('Not Set','Expired') 
 			AND ste.item_code=%s and ste.warehouse=%s GROUP BY ste.batch_no HAVING sum(ste.actual_qty) > 0 
 			ORDER BY ste.posting_date ASC,ste.posting_time ASC limit 1''', (item_code, warehouse), as_dict=0)
 				
@@ -66,7 +66,7 @@ def update_batch_expiry_status(batch_doc, method):
 
 def update_batch_expired_date_daily():
 	batch_items = frappe.db.sql ("""SELECT name, item, expiry_date, expiry_start_day FROM `tabBatch`
-		where expiry_date <> '' and days_to_expiry >= 0 and expiry_status <> 'Expired'""", as_dict=1)
+		where expiry_date <> '' and days_to_expiry >= 0 and expiry_status NOT IN ('Not Set','Expired')""", as_dict=1)
 
 	for d in batch_items:
 		if d.expiry_date:
