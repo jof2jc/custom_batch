@@ -2,7 +2,9 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 
-from frappe.utils import nowdate, now_datetime
+from frappe.utils import nowdate, now_datetime, flt, formatdate, get_datetime
+import json
+import datetime
 
 def set_item_name(self, method):
 	self.item_name = self.item_code
@@ -70,11 +72,19 @@ def update_batch_expired_date_daily():
 
 	for d in batch_items:
 		if d.expiry_date:
+			from erpnext.stock.doctype.batch.batch import get_batch_qty
+			batch_qty = get_batch_qty(d.name, "DM Arcadia - MS", None)
+
 			batch_doc = frappe.get_doc("Batch", d.name)
 			days_to_expiry = frappe.utils.date_diff(d.expiry_date, nowdate())
 			batch_doc.days_to_expiry = days_to_expiry
-
-			if int(days_to_expiry) <= int(d.expiry_start_day) and int(days_to_expiry) > 30:
+			
+			
+			if batch_qty and flt(batch_qty) <= 0:
+				batch_doc.expiry_date = nowdate()
+				batch_doc.expiry_status	= "Expired"
+				batch_doc.days_to_expiry = 0
+			elif int(days_to_expiry) <= int(d.expiry_start_day) and int(days_to_expiry) > 30:
 				batch_doc.expiry_status	= "Expired Soon"
 			elif int(days_to_expiry) <= 30 and int(days_to_expiry) > 0:
 				batch_doc.expiry_status	= "Expired Very Soon"
@@ -84,6 +94,35 @@ def update_batch_expired_date_daily():
 				batch_doc.expiry_status	= "Open"
 
 			batch_doc.save()
+
+def update_batch_expired_patch():
+	batch_items = frappe.db.sql ("""SELECT name, item, expiry_date, expiry_start_day FROM `tabBatch`
+		where expiry_status IN ('Expired')""", as_dict=1)
+
+	for d in batch_items:
+		if formatdate(d.expiry_date) == "06-09-2017":
+			from erpnext.stock.doctype.batch.batch import get_batch_qty
+			batch_qty = get_batch_qty(d.name, "DM Arcadia - MS", None)
+			#frappe.throw(_("batch qty is {0}").format(batch_qty))
+			batch_doc = frappe.get_doc("Batch", d.name)
+			#days_to_expiry = frappe.utils.date_diff(d.expiry_date, nowdate())
+			#batch_doc.days_to_expiry = days_to_expiry
+
+			if flt(batch_qty) > 0:
+				_data = frappe.db.sql ("""SELECT data from `tabVersion` where docname=%s and ref_doctype='Batch' order by modified desc limit 1""", d.name, as_dict=0)
+				#frappe.throw(_("{0}").format(_data))
+				_data = json.loads(_data[0][0])
+				_changes = _data.get("changed")
+				#frappe.throw(_("{0}").format(_changes))
+
+				if _changes:
+					print(d.name)
+					batch_doc.days_to_expiry = _changes[2][1]
+					batch_doc.expiry_status	= _changes[0][1]
+					batch_doc.expiry_date = get_datetime(formatdate(_changes[1][1]))
+				
+
+					batch_doc.save()
 
 def get_notification_config():
 	return {
