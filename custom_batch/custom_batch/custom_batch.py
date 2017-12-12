@@ -10,6 +10,52 @@ def set_item_name(self, method):
 	self.item_name = self.item_code
 
 @frappe.whitelist()
+def get_last_purchase_rate(item_code=None, warehouse=None):
+	return frappe.db.sql('''select item_code, incoming_rate from 
+				`tabStock Ledger Entry`	where item_code=%s and voucher_type='Purchase Invoice' 
+				order by posting_date desc, posting_time desc limit 1''', item_code, as_dict=0)
+
+@frappe.whitelist()
+def get_last_purchase_rate2(item_code=None, warehouse=None):
+	return frappe.db.sql('''select result_wrapper.item_code, result_wrapper.base_rate from 
+				(select
+					result.item_code,
+					result.base_rate
+					from (
+						(select
+							po_item.item_code,
+							po_item.item_name,
+							po.transaction_date as posting_date,
+							po_item.base_price_list_rate,
+							po_item.discount_percentage,
+							(po_item.base_rate / po_item.conversion_factor) as base_rate
+						from `tabPurchase Order` po, `tabPurchase Order Item` po_item
+						where po.name = po_item.parent and po.docstatus = 1)
+						union
+						(select
+							pr_item.item_code,
+							pr_item.item_name,
+							pr.posting_date,
+							pr_item.base_price_list_rate,
+							pr_item.discount_percentage,
+							(pr_item.base_rate / pr_item.conversion_factor) as base_rate
+						from `tabPurchase Receipt` pr, `tabPurchase Receipt Item` pr_item
+						where pr.name = pr_item.parent and pr.docstatus = 1)
+						union
+						(select
+							pi_item.item_code,
+							pi_item.item_name,
+							pi.posting_date,
+							pi_item.base_price_list_rate,
+							pi_item.discount_percentage,
+							(pi_item.base_rate / pi_item.conversion_factor) as base_rate
+						from `tabPurchase Invoice` pi, `tabPurchase Invoice Item` pi_item
+						where pi.name = pi_item.parent and pi.docstatus = 1)
+					) result
+					order by result.item_code asc, result.posting_date desc) result_wrapper
+					where item_code=%s group by item_code limit 1''', item_code, as_dict=0)
+
+@frappe.whitelist()
 def get_batch_no_fifo(item_code=None, warehouse=None):
 	data={}
 	return frappe.db.sql('''SELECT ste.batch_no, sum(ste.actual_qty) as qty FROM `tabStock Ledger Entry` ste Inner Join `tabBatch` b 
