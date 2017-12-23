@@ -12,7 +12,7 @@ def set_item_name(self, method):
 @frappe.whitelist()
 def get_last_purchase_rate(item_code=None, warehouse=None):
 	return frappe.db.sql('''select item_code, incoming_rate from 
-				`tabStock Ledger Entry`	where item_code=%s and voucher_type='Purchase Invoice' 
+				`tabStock Ledger Entry`	where item_code=%s and voucher_type='Purchase Invoice' and ifnull(incoming_rate,0) <> 0 
 				order by posting_date desc, posting_time desc limit 1''', item_code, as_dict=0)
 
 @frappe.whitelist()

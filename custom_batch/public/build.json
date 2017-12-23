@@ -1,6 +1,7 @@
 {
 	"js/custom_batch1.min.js": [
- 	       			"public/js/link_formatter.js"
+ 	       			"public/js/link_formatter.js",
+				"public/js/utils/serial_no_batch_selector.js"
     	]
 
 }
