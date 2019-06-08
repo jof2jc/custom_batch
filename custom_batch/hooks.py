@@ -133,7 +133,7 @@ doc_events = {
 # }
 
 scheduler_events = {
-	"daily": [
+	"daily_long": [
 		"custom_batch.custom_batch.custom_batch.update_batch_expired_date_daily"
 	]
 }
