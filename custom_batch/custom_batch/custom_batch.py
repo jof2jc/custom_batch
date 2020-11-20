@@ -114,7 +114,8 @@ def update_batch_expiry_status(batch_doc, method):
 
 def update_batch_expired_date_daily():
 	batch_items = frappe.db.sql ("""SELECT name, item, expiry_date, expiry_start_day FROM `tabBatch`
-		where expiry_date <> '' and days_to_expiry >= 0 and expiry_status NOT IN ('Not Set','Expired')""", as_dict=1)
+		where expiry_date <> '' and datediff(expiry_date,curdate()) <= 120 
+		and expiry_status NOT IN ('Not Set','Expired')""", as_dict=1)
 
 	for d in batch_items:
 		if d.expiry_date:
